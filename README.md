@@ -20,27 +20,42 @@ roles:
 
 playbooks
 * common.yaml
+
 	- hosts: hadoop-cluster
+	
   	  remote_user: root
+	  
   	  roles:
+	  
     	    - common
 	
 * hadoop-playbooks.yaml
+
 	- hosts: hadoop-cluster
+	
   	  remote_user: hadoop
+	  
   	  roles:
+	  
     	    - hadoop
 
 
 	- hosts: hive
+	
 	  remote_user: hadoop
+	  
 	  roles:
+	  
 	    - mysql
+	    
 	    - hive
 
 	- hosts: spark
+	
 	  remote_user: hadoop
+	  
 	  roles:
+	  
 	    - spark
 
 YAML文件中roles里配置的顺序具有依赖关系，依赖者要放到被依赖者之后，这样才能够实现被依赖者安装之后再安装依赖者的的正确安装顺序。在这里，由于hadoop依赖于zookeeper，所以zookeeper在最前面，而spark/hive又依赖hadoop，故spark/hive playbook放在hadoop之后。
