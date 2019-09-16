@@ -4,6 +4,7 @@
 playbooks中并没有做太多的异常处理，因此部署期间还需要手动接入调整。接下来介绍目录结构
 
 
+
 目录说明:
 
 group_vars: 作为主机组的全局变量
@@ -59,6 +60,7 @@ playbooks
 	    - spark
 
 YAML文件中roles里配置的顺序具有依赖关系，依赖者要放到被依赖者之后，这样才能够实现被依赖者安装之后再安装依赖者的的正确安装顺序。在这里，由于hadoop依赖于zookeeper，所以zookeeper在最前面，而spark/hive又依赖hadoop，故spark/hive playbook放在hadoop之后。
+
 
 使用方法
 
