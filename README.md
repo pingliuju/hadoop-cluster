@@ -43,6 +43,7 @@ playbooks
 YAML文件中roles里配置的顺序具有依赖关系，依赖者要放到被依赖者之后，这样才能够实现被依赖者安装之后再安装依赖者的的正确安装顺序。在这里，由于hadoop依赖于zookeeper，所以zookeeper在最前面，而spark/hive又依赖hadoop，故spark/hive playbook放在hadoop之后。
 
 使用方法
+
 1.配置inventory
 master1
 master2
