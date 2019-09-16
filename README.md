@@ -5,6 +5,7 @@ playbooks中并没有做太多的异常处理，因此部署期间还需要手�
 
 
 目录说明:
+
 group_vars: 作为主机组的全局变量
 production：存放inventory-hosts文件
 roles:
