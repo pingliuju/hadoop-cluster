@@ -45,25 +45,30 @@ YAML文件中roles里配置的顺序具有依赖关系，依赖者要放到被�
 使用方法
 
 1.配置inventory
+
 master1
 master2
 slave1
 
 2.配置/etc/hosts
+
 192.168.0.46 master1
 192.168.0.41 master2
 192.168.0.40 slave1
 127.0.0.1 localhost
 
 3.配置主机名
+
 hostname xxx
 echo xxx >> /etc/hostname
 
 4.配置root/hadoop 免密钥登陆
+
 ssh-keygen
 ssh-copy -i xxx
 
 5.run playbooks
+
 ansible-playbooks common.yaml -i production/hosts
 ansible-playbooks hadoop-playbooks.yaml -i production/hosts
 
