@@ -1,0 +1,23 @@
+## copy 到 /usr/lib/systemd/system/中，实现systemd托管
+[Unit]
+Description=ZooKeeper
+After=network.target
+Wants=network.target
+ConditionPathExists=/hadoop_base/app/zookeeper/conf/zoo.cfg 
+
+[Service]
+Type=simple
+User=hadoop
+Group=hadoop
+Environment=ZOO_LOG_DIR=/hadoop_base/log/zookeeper
+Environment=PATH=/usr/local/jdk1.8.0_221/bin:/usr/local/jdk1.8.0_221/jre/bin:/usr/local/jdk1.8.0_221/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/hadoop_base/app/zookeeper/bin:/root/bin:/hadoop_base/app/zookeeper/bin
+ExecStart=/hadoop_base/app/zookeeper/bin/zkServer.sh start
+ExecStop=/hadoop_base/app/zookeeper/bin/zkServer.sh stop
+PIDFile=/hadoop_data/bigdata/zookeeper/zookeeper_server.pid
+Restart=always
+RestartSec=3
+ 
+TimeoutSec=300
+ 
+[Install]
+WantedBy=multi-user.target

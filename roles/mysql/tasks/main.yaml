@@ -1,0 +1,59 @@
+# 下载官方repl源
+- name: Wget mysql57-community-release-el7-11.noarch.rpm
+  get_url: url="{{url}}/{{rpm}}" dest="{{download_base}}/{{rpm}}" remote_src=yes
+
+# 启用packages_facts
+- name: get the rpm or apt package facts
+  package_facts:
+    manager: "auto"
+
+- name: Install Mysql Rpm Packege
+  become: yes
+  shell: rpm -Uvh {{download_base}}/{{rpm}} 
+
+# yum在未安装的情况下安装,并设置installed.changed==true，否则installed.changed==false
+- name: YUM install MySQL
+  become: yes
+  yum:
+    name: mysql-community-server
+    state: installed
+  register: installed
+
+# Install MySQL-python and Expect
+- name: Install MySQL-python and  Expect
+  become: yes
+  yum: name={{ item }} state=installed
+  with_items:
+    - MySQL-python
+    - expect
+
+# Copy my.cnf.j2 TO /etc/mysql/mysql.conf.d/mysqld.cnf
+- name: Copy my.cnf.j2 
+  become: yes
+  template: src=my.cnf.j2 dest="{{mydir}}/my.cnf" mode=0755
+
+# 启动/重启服务 
+- name: Restart mysqld service
+  become: yes
+  shell: "systemctl restart mysqld"
+  when: installed.changed
+
+# 配置开机启动
+- name: Enable mysqld
+  become: yes
+  command: systemctl enable mysqld
+  when: installed.changed
+
+# reload systemctl
+- name: Reload systemd
+  become: yes
+  command: systemctl daemon-reload
+  when: installed.changed
+
+- name: copy mysql_user.sh 
+  become: yes
+  template: src=mysql_user.j2 dest=/hadoop_base/download/mysql_user.sh mode=0755
+  
+- name: Run mysql_user.sh
+  become: yes
+  shell: /hadoop_base/download/mysql_user.sh

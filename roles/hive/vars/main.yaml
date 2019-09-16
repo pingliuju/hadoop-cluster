@@ -1,0 +1,5 @@
+path: hive  # hive下载地址中间path，参看下面的tasks/main.yaml
+filename: apache-hive # hive下载安装文件第一段文件名
+version: 3.1.2 # hive下载安装文件版本号部分,3.4.14以后版本不包括lib、jar文件。安装需手动拷贝，否则报错
+suffix: tar.gz # hive下载安装后缀
+appname: hive # hive应用名称

@@ -1,0 +1,91 @@
+- name: Create Spark Data Directory
+  file: path={{data_base}}/{{appname}} state=directory
+
+- name: Create Spark Log Directory
+  file: path={{log_base}}/{{appname}} state=directory
+
+- name: Copy spark file
+  copy: src=spark-2.4.4.tgz dest={{download_base}}  owner=hadoop group=hadoop
+
+- name: Copy Scala FIle
+  copy: src=scala-2.13.0.tgz dest={{download_base}}  owner=hadoop group=hadoop
+
+- name: Check whether registered
+  stat:
+    path: "{{app_base}}/{{filename}}-{{version}}"
+  register: node_files
+
+- debug:
+    msg: "{{node_files.stat.exists}}"
+
+- name: Extract archive
+  unarchive: dest={{app_base}} src={{download_base}}/spark-2.4.4.tgz remote_src=yes owner=hadoop group=hadoop
+  when: node_files.stat.exists == False
+
+- name: Extract archive
+  unarchive: dest={{app_base}} src={{download_base}}/scala-2.13.0.tgz remote_src=yes owner=hadoop group=hadoop
+
+- name: Add Spark soft link
+  file: src="{{app_base}}/spark-2.4.4-bin-without-hadoop" dest={{app_base}}/{{appname}} state=link mode=0755 owner=hadoop group=hadoop
+
+- name: Add Scala Soft Link
+  file: src="{{app_base}}/scala-2.13.0" dest={{app_base}}/scala state=link mode=0755 owner=hadoop group=hadoop
+
+- name: Add ENV SPARK_HOME
+  become: yes
+  lineinfile: dest=/etc/profile.d/environment.sh line="export SPARK_HOME={{app_base}}/{{appname}}"
+
+- name: ADD ENV SCALA_HOME
+  become: yes
+  lineinfile: dest=/etc/profile.d/environment.sh line="export SCALA_HOME=/hadoop_base/app/scala"
+
+- name: ADD ENV CLASSPATH
+  become: yes
+  lineinfile: dest=/etc/profile.d/environment.sh line="export CLASSPATH=$($HADOOP_HOME/bin/hadoop classpath):$CLASSPATH"
+
+- name: Export PATH
+  become: yes
+  lineinfile: dest=/etc/profile.d/environment.sh line="export PATH=$PATH:$SPARK_HOME/bin:$SPARK_HOME/sbin:$SCALA_HOME/bin"
+
+- name: Copy spark-default.xml to /hadoop_base/app/spark/conf
+  copy: src="{{app_base}}/{{appname}}/conf/spark-defaults.conf.template" dest="{{app_base}}/{{appname}}/conf/spark-defaults.conf" mode=0755 remote_src=yes
+
+- name: Copy spark-env.sh
+  copy: src="{{app_base}}/{{appname}}/conf/spark-env.sh.template" dest="{{app_base}}/{{appname}}/conf/spark-env.sh" remote_src=yes mode=0755
+
+- name: Add Env HADOOP_CONF_DIR
+  lineinfile: dest="{{app_base}}/{{appname}}/conf/spark-env.sh" line="export HADOOP_CONF_DIR={{app_base}}/hadoop/etc/hadoop"
+
+- name: ADD ENV JAVA_HOME 
+  lineinfile: dest="{{app_base}}/{{appname}}/conf/spark-env.sh" line="export JAVA_HOME=/usr/local/jdk1.8.0_221"
+
+- name: ADD ENV SPARK_DIST_CLASSPATH
+  lineinfile: dest="{{app_base}}/{{appname}}/conf/spark-env.sh" line="export SPARK_DIST_CLASSPATH=$(hadoop classpath)"
+
+# 创建spark依赖jar包上传目录
+- name: Create Spark Jars Directory
+  shell: /hadoop_base/app/hadoop/bin/hadoop fs -mkdir hdfs://master1:8020/spark_jars/ 
+
+- name: Chmod 0755 Spark Jars Directory
+  shell: /hadoop_base/app/hadoop/bin/hdfs dfs -chmod 755 hdfs://master1:8020/spark_jars/
+
+- name: Copy Jars To hdfs://master1:8020/spark_jars/
+  shell: cd /hadoop_base/app/spark/jars && /hadoop_base/app/hadoop/bin/hdfs dfs -put *  hdfs://master1:8020/spark_jars/
+
+- name: Chmod 0755 Spark Jars Packege
+  shell: /hadoop_base/app/hadoop/bin/hdfs dfs -chmod 755 hdfs://master1:8020/spark_jars/*
+
+- name: Copy 
+  shell: cd /hadoop_base/app/spark/jars && cp /hadoop_base/app/hadoop/share/hadoop/common/lib/slf4j-* .
+
+- name: Enable submit job in yarn mode by default in $SPARK_HOME/conf/spark-default.xml
+  blockinfile:
+    path: "{{app_base}}/{{appname}}/conf/spark-defaults.conf"
+    block: |
+      spark.driver.memory              2g
+      spark.yarn.jars hdfs://master1:8020/spark_jars/*
+      spark.master                            yarn
+      spark.executor.cores                    4
+      spark.executor.memory                   2g
+      spark.executor.instances                4
+  tags: conf

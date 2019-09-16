@@ -1,0 +1,11 @@
+path: hadoop/core
+filename: hadoop
+version: 3.2.0
+suffix: tar.gz
+appname: hadoop
+# 以下是NameNode/DataNode启动使用JVM参数
+HADOOP_HEAPSIZE: 1024
+HADOOP_NAMENODE_INIT_HEAPSIZE: 1024
+HDFS_NAMENODE_OPTS: -Xms1g -Xmx1g -XX:+UseG1GC -XX:MetaspaceSize=512m -XX:MaxMetaspaceSize=512m -XX:G1RSetUpdatingPauseTimePercent=5 -XX:InitiatingHeapOccupancyPercent=70 -XX:ParallelGCThreads=20 -XX:ConcGCThreads=20 -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintHeapAtGC -XX:+PrintTenuringDistribution -XX:+PrintGCApplicationStoppedTime -XX:+PrintPromotionFailure -XX:PrintFLSStatistics=1 -Xloggc:/hadoop_base/log/namenode-gc.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=10M
+HDFS_DATANODE_OPTS: -Xms1g -Xmx1g -XX:+UseG1GC -XX:MetaspaceSize=512m -XX:MaxMetaspaceSize=512m -XX:G1RSetUpdatingPauseTimePercent=5 -XX:InitiatingHeapOccupancyPercent=70 -XX:ParallelGCThreads=20 -XX:ConcGCThreads=20 -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintHeapAtGC -XX:+PrintTenuringDistribution -XX:+PrintGCApplicationStoppedTime -XX:+PrintPromotionFailure -XX:PrintFLSStatistics=1 -Xloggc:/hadoop_base/log/datanode-gc.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=10M
+HDFS_SECONDARYNAMENODE_OPTS: -Xms1g -Xmx1g -XX:+UseG1GC -XX:MetaspaceSize=512m -XX:MaxMetaspaceSize=512m -XX:G1RSetUpdatingPauseTimePercent=5 -XX:InitiatingHeapOccupancyPercent=70 -XX:ParallelGCThreads=20 -XX:ConcGCThreads=20 -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintHeapAtGC -XX:+PrintTenuringDistribution -XX:+PrintGCApplicationStoppedTime -XX:+PrintPromotionFailure -XX:PrintFLSStatistics=1 -Xloggc:/hadoop_base/log/secondarynamenode-gc.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=10M

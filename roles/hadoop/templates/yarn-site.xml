@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+    <!--启用RM高可用-->
+    <property>
+        <name>yarn.resourcemanager.ha.enabled</name>
+        <value>true</value>
+    </property>
+
+    <!--RM集群标识符-->
+    <property>
+        <name>yarn.resourcemanager.cluster-id</name>
+        <value>ns1</value>
+    </property>
+
+
+    <property>
+        <!--指定两台RM主机名标识符-->
+        <name>yarn.resourcemanager.ha.rm-ids</name>
+        <value>rm1,rm2</value>
+    </property>
+
+
+    <!--RM故障自动切换-->
+    <property>
+        <name>yarn.resourcemanager.ha.automatic-failover.recover.enabled</name>
+        <value>true</value>
+    </property>
+
+
+    <!--RM故障自动恢复-->
+
+    <property>
+        <name>yarn.resourcemanager.recovery.enabled</name>
+        <value>true</value>
+    </property>
+
+
+    <!--RM主机1-->
+    <property>
+        <name>yarn.resourcemanager.hostname.rm1</name>
+        <value>master1</value>
+    </property>
+
+    <!--RM主机2-->
+    <property>
+        <name>yarn.resourcemanager.hostname.rm2</name>
+        <value>master2</value>
+    </property>
+
+
+    <!--RM状态信息存储方式，一种基于内存(MemStore)，另一种基于ZK(ZKStore)-->
+    <property>
+        <name>yarn.resourcemanager.store.class</name>
+        <value>org.apache.hadoop.yarn.server.resourcemanager.recovery.FileSystemRMStateStore</value>
+    </property>
+
+
+    <!--使用ZK集群保存状态信息-->
+    <property>
+        <name>yarn.resourcemanager.zk-address</name>
+        <value>master1:2181,master1:2181,slave1:2181</value>
+    </property>
+
+
+    <!--向RM调度资源地址-->
+    <property>
+        <name>yarn.resourcemanager.scheduler.address.rm1</name>
+        <value>master1:8030</value>
+    </property>
+
+
+    <property>
+        <name>yarn.resourcemanager.scheduler.address.rm2</name>
+        <value>master2:8030</value>
+    </property>
+
+
+    <!--NodeManager通过该地址交换信息-->
+    <property>
+        <name>yarn.resourcemanager.resource-tracker.address.rm1</name>
+        <value>master1:8031</value>
+    </property>
+
+    <property>
+        <name>yarn.resourcemanager.resource-tracker.address.rm2</name>
+        <value>master2:8031</value>
+    </property>
+
+
+    <!--客户端通过该地址向RM提交对应用程序操作-->
+    <property>
+        <name>yarn.resourcemanager.address.rm1</name>
+        <value>master1:8032</value>
+    </property>
+    <property>
+        <name>yarn.resourcemanager.address.rm2</name>
+        <value>master2:8032</value>
+    </property>
+
+
+    <!--管理员通过该地址向RM发送管理命令-->
+    <property>
+        <name>yarn.resourcemanager.admin.address.rm1</name>
+        <value>master1:8033</value>
+    </property>
+
+    <property>
+        <name>yarn.resourcemanager.admin.address.rm2</name>
+        <value>master2:8033</value>
+    </property>
+
+
+    <!--RM HTTP访问地址,查看集群信息-->
+    <property>
+        <name>yarn.resourcemanager.webapp.address.rm1</name>
+        <value>master1:8088</value>
+    </property>
+
+    <property>
+        <name>yarn.resourcemanager.webapp.address.rm2</name>
+        <value>master2:8088</value>
+    </property>
+
+
+    <property>
+        <name>yarn.resourcemanager.scheduler.class</name>
+        <value>org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity.CapacityScheduler</value>
+    </property>
+
+    <property>
+        <name>yarn.nodemanager.hostname</name>
+        <value>0.0.0.0</value>
+    </property>
+
+    <property>
+        <name>yarn.nodemanager.bind-host</name>
+        <value>0</value>
+    </property>
+
+
+    <property>
+        <name>yarn.nodemanager.aux-services</name>
+        <value>mapreduce_shuffle</value>
+    </property>
+
+    <property>
+        <name>yarn.nodemanager.aux-services.mapreduce.shuffle.class</name>
+        <value>org.apache.hadoop.mapred.ShuffleHandler</value>
+    </property>
+
+    <property>
+        <description>Classpath for typical applications.</description>
+        <name>yarn.application.classpath</name>
+        <value>$HADOOP_CONF_DIR
+            ,$HADOOP_COMMON_HOME/share/hadoop/common/*
+            ,$HADOOP_COMMON_HOME/share/hadoop/common/lib/*
+            ,$HADOOP_HDFS_HOME/share/hadoop/hdfs/*
+            ,$HADOOP_MAPRED_HOME/share/hadoop/mapreduce/*
+            ,$YARN_HOME/share/hadoop/yarn/*
+        </value>
+    </property>
+
+    <!-- Configurations for NodeManager -->
+    <property>
+        <name>yarn.nodemanager.resource.memory-mb</name>
+        <value>13312</value>
+        <description>NodeManager可使用最大内存</description>
+    </property>
+
+    <property>
+        <name>yarn.scheduler.minimum-allocation-mb</name>
+        <value>1024</value>
+        <description>单个任务可申请的最少物理内存量</description>
+    </property>
+
+    <property>
+        <name>yarn.nodemanager.resource.cpu-vcores</name>
+        <value>8</value>
+        <description>NodeManager可使用最大虚拟cpu core数</description>
+    </property>
+
+    <property>
+        <name>yarn.scheduler.maximum-allocation-mb</name>
+        <value>5632</value>
+        <description>单个任务可申请的最大物理内存量</description>
+    </property>
+</configuration>

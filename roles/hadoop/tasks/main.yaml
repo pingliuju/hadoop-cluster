@@ -1,0 +1,212 @@
+# 创建DataNode数据存放目录,data_base在外层group_vars里面定义
+- name: Create DataNode Data Directory
+  file: path={{data_base}}/{{appname}}/hdfs/datanode state=directory mode=0755 owner=hadoop group=hadoop
+
+# 创建NameNode数据存放目录
+- name: Create NameNode Data Directory
+  file: path={{data_base}}/{{appname}}/hdfs/namenode state=directory mode=0755 owner=hadoop group=hadoop
+
+# 创建JourNode数据存放目录
+- name: Create JOURNAL Data Directory
+  file: path={{data_base}}/{{appname}}/hdfs/jnode state=directory mode=0755 owner=hadoop group=hadoop
+
+# 创建Hadoop Tmp目录 存放临时文件
+- name: Create Tmp Data Directory
+  file: path={{data_base}}/{{appname}}/hadooptmp state=directory mode=0755 owner=hadoop group=hadoop
+# 创建日志保存目录
+- name: Create Hadoop Log Directory
+  file: path={{log_base}}/{{appname}} state=directory mode=0755 owner=hadoop group=hadoop
+
+# 离线模式，copy到远端执行
+# 这里有个tricky，就是get_url 的dest参数的值如果到具体文件，那么如果当前机器上该文件存在，get_url没有制定force=yes的情况下就不会重新下载，如果dest只是到目录，那么每次都会重新下载
+- name: Copy hadoop file
+  copy: 
+    src: '{{filename}}-{{version}}.{{suffix}}' 
+    dest: "{{download_base}}/{{filename}}-{{version}}.{{suffix}}" 
+    owner: hadoop
+    group: hadoop
+    force: no
+  register: download_result
+
+# 校验下载文件是否成功创建
+- name: Check whether registered
+  stat:
+    path: "{{app_base}}/{{filename}}-{{version}}"
+  register: node_files
+
+# debug调试输出
+- debug:
+    msg: "{{node_files.stat.exists}}"
+
+# 在解压缩目标目录不存在的情况下解压，防止解压覆盖
+- name: Extract archive
+  unarchive: dest={{app_base}} src='{{download_base}}/{{filename}}-{{version}}.{{suffix}}' remote_src=yes mode=0755 owner=hadoop group=hadoop
+  when: node_files.stat.exists == False
+
+# 创建软链接
+- name: Add soft link
+  file: src="{{app_base}}/{{filename}}-{{version}}" dest={{app_base}}/{{appname}} state=link mode=0755 owner=hadoop group=hadoop
+
+# 添加HADOOP_HOME环境变量
+- name: Add ENV HADOOP_HOME
+  become: yes
+  lineinfile: dest=/etc/profile.d/environment.sh line="export HADOOP_HOME={{app_base}}/{{appname}}"
+
+- name: Add ENV HADOOP_LIBEXEC_DIR
+  become: yes
+  lineinfile: dest=/etc/profile.d/environment.sh line="export HADOOP_LIBEXEC_DIR=$HADOOP_HOME/libexec"
+
+- name: Add ENV HADOOP_MAPRED_HOME
+  become: yes
+  lineinfile: dest=/etc/profile.d/environment.sh line="export HADOOP_MAPRED_HOME=$HADOOP_HOME"
+
+- name: Add ENV YARN HOME
+  become: yes
+  lineinfile: dest=/etc/profile.d/environment.sh line="export YARN_HOME=$HADOOP_HOME"
+
+- name: Add ENV HADOOP_COMMON_HOME
+  become: yes
+  lineinfile: dest=/etc/profile.d/environment.sh line="export HADOOP_COMMON_HOME=$HADOOP_HOME"
+
+- name: Add ENV HADOOP_HDFS_HOME
+  become: yes
+  lineinfile: dest=/etc/profile.d/environment.sh line="export HADOOP_HDFS_HOME=$HADOOP_HOME"
+
+- name: Add ENV HADOOP_COMMON_LIB_NATIVE_DIR
+  become: yes
+  lineinfile: dest=/etc/profile.d/environment.sh line="export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/etc/hadoop"
+
+- name: Add ENV HADOOP_LIBEXEC_DIR
+  become: yes
+  lineinfile: dest=/etc/profile.d/environment.sh line="export HADOOP_LIBEXEC_DIR=$HADOOP_HOME/libexec"
+  
+- name: Add ENV HADOOP_CONF_DIR
+  become: yes
+  lineinfile: dest=/etc/profile.d/environment.sh line="export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop"
+
+- name: Add ENV HDFS_CONF_DIR
+  become: yes
+  lineinfile: dest=/etc/profile.d/environment.sh line="export HDFS_CONF_DIR=$HADOOP_HOME/etc/hadoop"
+
+- name: Add Hadoop Log Env
+  become: yes
+  lineinfile: dest=/etc/profile.d/environment.sh line="export HADOOP_LOG_DIR=/hadoop_base/log/hadoop"
+
+- name: Add ENV JAVA_LIBRARY_PATH
+  become: yes
+  lineinfile: dest=/etc/profile.d/environment.sh line="export JAVA_LIBRARY_PATH=$HADOOP_HOME/lib/native:$JAVA_LIBRARY_PATH"
+
+- name: Export PATH
+  become: yes
+  lineinfile: dest=/etc/profile.d/environment.sh line="export PATH=$JAVE_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$PATH"
+
+- name: Source Profile
+  shell: . /etc/profile.d/environment.sh
+
+# copy hadoop相关配置文件XML
+- name: Copy core-site.xml
+  template: src=core-site.xml dest="{{app_base}}/{{appname}}/etc/hadoop/core-site.xml" mode=0755 owner=hadoop group=hadoop
+
+- name: Copy hdfs-site.xml
+  template: src=hdfs-site.xml dest="{{app_base}}/{{appname}}/etc/hadoop/hdfs-site.xml" mode=0755 owner=hadoop group=hadoop
+
+- name: Copy mapred-site.xml
+  template: src=mapred-site.xml dest="{{app_base}}/{{appname}}/etc/hadoop/mapred-site.xml" mode=0755 owner=hadoop group=hadoop
+
+- name: Copy yarn-site.xml
+  template: src=yarn-site.xml dest="{{app_base}}/{{appname}}/etc/hadoop/yarn-site.xml" mode=0755 owner=hadoop group=hadoop
+
+- name: Copy slaves
+  template: src=slaves dest="{{app_base}}/{{appname}}/etc/hadoop/slaves" mode=0755 owner=hadoop group=hadoop
+
+# 修改 hadoop-env.sh环境变量
+- name: Update ENV JAVA_HOME
+  lineinfile: 
+    dest: "{{app_base}}/{{appname}}/etc/hadoop/hadoop-env.sh" 
+    line: "export JAVA_HOME={{JAVA_HOME}}"
+
+- name: Update ENV HADOOP_HEAPSIZE
+  lineinfile: 
+    dest: "{{app_base}}/{{appname}}/etc/hadoop/hadoop-env.sh" 
+    line: "export HADOOP_HEAPSIZE={{HADOOP_HEAPSIZE}}"
+
+- name: Update ENV HADOOP_NAMENODE_INIT_HEAPSIZE
+  lineinfile: 
+    dest: "{{app_base}}/{{appname}}/etc/hadoop/hadoop-env.sh" 
+    line: "export HADOOP_NAMENODE_INIT_HEAPSIZE={{HADOOP_NAMENODE_INIT_HEAPSIZE}}"
+
+- name: Update HADOOP_OPTS
+  lineinfile: 
+    dest: "{{app_base}}/{{appname}}/etc/hadoop/hadoop-env.sh" 
+    line: "export HADOOP_HEAPSIZE={{HADOOP_NAMENODE_INIT_HEAPSIZE}}"
+
+- name: Update HDFS_NAMENODE_OPTS
+  lineinfile: 
+    dest: "{{app_base}}/{{appname}}/etc/hadoop/hadoop-env.sh" 
+    line: 'export HDFS_NAMENODE_OPTS="${HDFS_NAMENODE_OPTS} {{HDFS_NAMENODE_OPTS}}"'
+
+- name: Update HDFS_DATANODE_OPTS
+  lineinfile: 
+    dest: "{{app_base}}/{{appname}}/etc/hadoop/hadoop-env.sh" 
+    line: 'export HDFS_DATANODE_OPTS="${HDFS_DATANODE_OPTS} {{HDFS_DATANODE_OPTS}}"'
+
+- name: Update HDFS_SECONDARYNAMENODE_OPTS
+  lineinfile: 
+    dest: "{{app_base}}/{{appname}}/etc/hadoop/hadoop-env.sh" 
+    line: 'export HDFS_SECONDARYNAMENODE_OPTS="${HDFS_NAMENODE_OPTS} {{HDFS_SECONDARYNAMENODE_OPTS}}"'
+
+- name: Update mapred-env.sh ENV JAVA_HOME
+  lineinfile: 
+    dest: "{{app_base}}/{{appname}}/etc/hadoop/mapred-env.sh" 
+    line: "export JAVA_HOME={{JAVA_HOME}}"
+
+- name: Update yarn-env.sh ENV JAVA_HOME
+  lineinfile: 
+    dest: "{{app_base}}/{{appname}}/etc/hadoop/yarn-env.sh" 
+    line: "export JAVA_HOME={{JAVA_HOME}}"
+
+- name: Update yarn-env ENV HADOOP_LOG_DIR
+  lineinfile:
+    dest: "{{app_base}}/{{appname}}/etc/hadoop/yarn-env.sh"
+    line: 'export HADOOP_LOG_DIR="/hadoop_base/log/hadoop"'
+
+ # 初始化hadoop 集群
+ # 格式化hdfs ，其中一个节点执行(master1)
+- name: Start JournalNode From Master1 Master2 Slave1
+  shell: nohup /hadoop_base/app/hadoop/bin/hdfs --daemon start journalnode
+
+- name: Run Hdfs Format
+  shell: /hadoop_base/app/hadoop/bin/hdfs namenode -format
+  when: "inventory_hostname=='master1'"
+
+- name: Start First NameNode From Master1
+  shell: nohup /hadoop_base/app/hadoop/bin/hdfs --daemon start namenode
+  when: "inventory_hostname=='master1'"
+
+- name: Sync Namenode Data To Master2
+  shell: nohup /hadoop_base/app/hadoop/bin/hdfs namenode -bootstrapStandby 
+  when: "inventory_hostname=='master2'"
+  
+- name: Start Secondary NameNode From Master2
+  shell: nohup /hadoop_base/app/hadoop/bin/hdfs --daemon start namenode
+  when: "inventory_hostname=='master2'"
+
+- name: Start DataNode From Master1 Master2 Slave1
+  shell: nohup /hadoop_base/app/hadoop/bin/hdfs --daemon start datanode
+
+- name: Start Yarn Manager From Master1
+  shell: /hadoop_base/app/hadoop/sbin/start-yarn.sh
+  when: "inventory_hostname=='master1'"
+
+ # 重启hdfs、yarn服务
+- name: Stop Yarn
+  shell: /hadoop_base/app/hadoop/sbin/stop-yarn.sh
+
+- name: Stop Dfs
+  shell: /hadoop_base/app/hadoop/sbin/stop-dfs.sh
+  
+- name: Start Dfs
+  shell: /hadoop_base/app/hadoop/sbin/start-dfs.sh
+
+- name: Start Yarn
+  shell: /hadoop_base/app/hadoop/sbin/start-yarn.sh

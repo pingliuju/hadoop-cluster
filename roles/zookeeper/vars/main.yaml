@@ -1,0 +1,6 @@
+path: zookeeper
+filename: apache-zookeeper
+version: 3.5.5
+soft: bin
+suffix: tar.gz 
+appname: zookeeper

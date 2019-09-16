@@ -1,0 +1,18 @@
+# base 跟data目录区分开，避免后期误操作及磁盘IO资源抢占
+base: "/hadoop_base"  # 设置所有操作的顶级目录，包括下载/安装/日志等
+data: "/hadoop_data"  # 设置hadoop相关的所有服务的数据顶级目录
+download_base: "{{base}}/download" # 所有需要下载的第三方安装包存放目录
+app_base: "{{base}}/app" # 所有应用安装根目录
+data_base: "{{data}}/bigdata" # 所有应用启动后数据存放根目录
+log_base: "{{base}}/log" # 所有应用启动后日志存放根目录
+download_server: "http://mirror.bit.edu.cn/apache" # 所有应用下载mirror地址，之后hadoop/zookeeper/spark等的安装包都会从该mirror下载
+run_user: hadoop  # 所有程序运行身份
+JAVA_VERSION: jdk-8u221-linux-x64.tar.gz
+JAVA_BASE: /usr/local
+JAVA_HOME: /usr/local/jdk1.8.0_221
+
+# hadoop用户执行命令时免输入提示密码
+#ansible_become: yes
+#ansible_become_user: root  # 需要切换到高权限的用户
+ansible_become_password: "Hadoop123!@#" # 切换用户输入的是普通用户的密码
+#ansible_become_method: sudo

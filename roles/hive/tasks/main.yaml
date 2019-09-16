@@ -1,0 +1,41 @@
+- name: Create Hive Data Directory
+  file: path={{data_base}}/{{appname}} state=directory mode=0755 owner=hadoop group=hadoop
+
+- name: Create Hive Log Directory
+  file: path={{log_base}}/{{appname}} state=directory mode=0755 owner=hadoop group=hadoop
+
+- name: Copy apache-hive-3.1.2-bin.tar.gz to /hadoop_base/download
+  copy: src=apache-hive-3.1.2-bin.tar.gz dest={{download_base}} mode=0755 owner=hadoop group=hadoop
+
+- name: Extract hive archive
+  unarchive: dest={{app_base}} src='{{download_base}}/{{filename}}-{{version}}-bin.{{suffix}}' remote_src=yes owner=hadoop group=hadoop
+
+- name: Add hive soft link
+  file: src="{{app_base}}/{{filename}}-{{version}}-bin" dest={{app_base}}/{{appname}} state=link mode=0755 owner=hadoop group=hadoop
+
+- name: Add ENV HIVE_HOME
+  become: yes
+  lineinfile: dest=/etc/profile.d/environment.sh line="export HIVE_HOME={{app_base}}/{{appname}}"
+
+- name: Export Hive PATH
+  become: yes
+  lineinfile: dest=/etc/profile.d/environment.sh line="export PATH=$PATH:$HIVE_HOME/bin"
+
+- name: Copy hive-site.xml to /hadoop_base/app/hive/conf
+  template: src=hive-site.xml dest="{{app_base}}/{{appname}}/conf/hive-site.xml" mode=0755 owner=hadoop group=hadoop
+
+- name: Copy hive-default.xml to /hadoop_base/app/hive/conf
+  copy: src="{{app_base}}/{{appname}}/conf/hive-default.xml.template" dest="{{app_base}}/{{appname}}/conf/hive-default.xml" mode=0755 remote_src=yes
+
+- name: Copy log4j2.properties to /hadoop_base/app/hive/conf
+  copy: src={{app_base}}/{{appname}}/conf/hive-log4j2.properties.template dest="{{app_base}}/{{appname}}/conf/hive-log4j2.properties" mode=0755 remote_src=yes owner=hadoop group=hadoop
+
+- name: Copy hive-env.sh to /hadoop_base/app/hive/conf
+  copy: src={{app_base}}/{{appname}}/conf/hive-env.sh.template dest="{{app_base}}/{{appname}}/conf/hive-env.sh" mode=0755 remote_src=yes owner=hadoop group=hadoop
+
+- name: Add mysql connector to /hadoop_base/app/hive/lib
+  copy: src=mysql-connector-java-5.1.48.jar dest="{{app_base}}/{{appname}}/lib/mysql-connector-java-5.1.48.jar" mode=0755 owner=hadoop group=hadoop
+
+# 使用schematool脚本初始化在mysql中创建Hive元数据信息，以下task只能运行一次
+- name: InitSchema
+  shell: "source /etc/profile.d/environment.sh && schematool -dbType mysql -initSchema"

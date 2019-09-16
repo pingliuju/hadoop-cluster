@@ -1,0 +1,13 @@
+[hadoop-cluster]
+master1
+master2
+slave1
+
+
+[hive]
+master2
+
+[spark]
+master1
+master2
+slave1

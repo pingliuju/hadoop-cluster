@@ -1,0 +1,4 @@
+- hosts: hadoop-cluster
+  remote_user: root
+  roles:
+    - common

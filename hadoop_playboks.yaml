@@ -1,0 +1,16 @@
+- hosts: hadoop-cluster
+  remote_user: hadoop
+  roles:
+    - hadoop
+
+
+- hosts: hive
+  remote_user: hadoop
+  roles:
+    - mysql
+    - hive
+
+- hosts: spark
+  remote_user: hadoop
+  roles:
+    - spark

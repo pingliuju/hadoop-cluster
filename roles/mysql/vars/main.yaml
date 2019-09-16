@@ -1,0 +1,7 @@
+version: 5.7 # mysql下载安装文件版本号部分,3.4.14以后版本不包括lib、jar文件。安装需手动拷贝，否则报错
+url: https://dev.mysql.com/get/
+rpm: mysql57-community-release-el7-11.noarch.rpm 
+appname: mysql # mysql应用名称
+mydir: /etc
+passwd: Root123!@#
+mysql_root_password: Root123!@#

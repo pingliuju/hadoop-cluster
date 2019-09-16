@@ -1,0 +1,90 @@
+# 第一阶段开始
+## 创建数据保存目录
+- name: Create Zookeeper Data Directory
+  file: path={{data_base}}/{{appname}} state=directory mode=0755 owner=hadoop group=hadoop
+ 
+# 创建日志保存目录
+- name: Create Zookeeper Log Directory
+  file: path={{log_base}}/{{appname}} state=directory mode=0755 owner=hadoop group=hadoop
+
+# 拷贝安装包
+- name: Copy zookeeper file to Download_base
+  copy: src='{{filename}}-{{version}}-{{soft}}.{{suffix}}' dest={{download_base}} mode=0755 owner=hadoop group=hadoop force=no
+
+# 校验解压缩目录（/hadoop_base/app/apache-zookeeper-3.5.5）是否存在，并注册到node_filters变量中
+- name: Check whether registered
+  stat:
+    path: "{{app_base}}/{{filename}}-{{version}}-{{soft}}"
+  register: node_files
+ 
+# debug输出node_filters.stat.exists值
+- debug:
+    msg: "{{node_files.stat.exists}}"
+ 
+# 如果文件下载成功，并且解压缩目录(/hadoop_base/app/zookeeper-3.5.5)不存在，则解压缩，否则跳过不解压缩
+- name: Extract archive
+  unarchive: dest={{app_base}} src='{{download_base}}/{{filename}}-{{version}}-{{soft}}.{{suffix}}' remote_src=yes mode=0755 owner=hadoop group=hadoop
+  when: node_files.stat.exists == False
+ 
+# 创建/hadoop_base/app/zookeeper软链接到解压缩目录(/hadoop_base/app/zookeeper-3.5.5)
+- name: Add soft link
+  file: src="{{app_base}}/{{filename}}-{{version}}-{{soft}}" dest={{app_base}}/{{appname}} state=link mode=0755 owner=hadoop group=hadoop
+ 
+# 添加"export ZOOKEEPER_HOME=/hadoop_base/app/zookeeper" 到/etc/profile.d/environment.sh文件中
+- name: Add bin to path
+  become: yes
+  lineinfile: dest=/etc/profile.d/environment.sh line="export ZOOKEEPER_HOME={{app_base}}/{{appname}}"
+  
+# 添加"export $PATH=$PATH:$ZOOKEEPER_HOME/bin" 到/etc/profile.d/environment.sh文件中
+- name: Export Path
+  become: yes
+  lineinfile: dest=/etc/profile.d/environment.sh line="export PATH=$PATH:$ZOOKEEPER_HOME/bin"
+
+# 变量生效
+- name: Source Profile
+  become: yes
+  shell: source /etc/profile.d/environment.sh
+# 第一阶段完成
+
+# 第二阶段开始，配置/替换 必须配置文件
+  # 渲染zookeeper.cfg.j2并复制到远程$ZOOKEEPER_HOME/conf/zookeeper.cfg
+- name: Copy zoo.cfg.j2 Template
+  template: src=zoo.cfg.j2 dest="{{app_base}}/{{appname}}/conf/zoo.cfg" mode=0755 owner=hadoop group=hadoop
+ 
+# 在每台机器的/hadoop_base/bigdata/zookeeper下，创建myid文件，并使用with_indexed_items语法，设置文件内容为当前主机在production/hosts文件中的序号+1
+- name: Set Zookeeper Id
+  copy: content={{item.0 + 1}} dest="{{data_base}}/{{appname}}/myid" mode=0744 owner=hadoop group=hadoop force=no
+  with_indexed_items: "{{groups['hadoop-cluster']}}"
+  when: item.1 == inventory_hostname
+ 
+# 第二阶段完成
+
+# 第三阶段 配置systemctl管理zookeeper服务 
+  # 使用本地zookeeper.service.j2为模板创建/usr/lib/systemd/system/zookeeper.service 文件
+- name: auto service manager zookeeper
+  become: yes
+  template:
+    src:  zookeeper.service.j2
+    dest: /usr/lib/systemd/system/zookeeper.service
+    mode: 0755
+    force: no
+
+# rerolad systemctl
+- name: Reload systemd
+  become: yes
+  command: systemctl daemon-reload
+
+# 启动/重启服务
+- name: Restart ZooKeeper service
+  become: yes
+  shell: "systemctl restart zookeeper"
+ 
+# 查看状态
+- name: Status ZooKeeper service
+  shell: "systemctl status zookeeper"
+  register: zookeeper_status_result
+  ignore_errors: True
+  
+# debug输出状态结果
+- debug:
+    msg: "{{ zookeeper_status_result }}"

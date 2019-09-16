@@ -1,0 +1,67 @@
+ # 添加用户/用户组
+- name: Create Group Hadoop
+  become: yes
+  group: name=hadoop  state=present
+
+- name: Create User Hadoop
+  become: yes
+  user: name=hadoop group=hadoop password={{hadoop_pw}} shell=/bin/bash home=/home/hadoop state=present
+
+- name: Chwon -R hadoop:hadoop /home/hadoop
+  file: dest=/home/hadoop owner=hadoop group=hadoop
+
+ # 创建软件目录
+- name: Create Base Working Directory # 任务名称
+  become: yes
+  file: path={{base}} state=directory mode=0755 owner=hadoop group=hadoop
+
+- name: Create Base Working Directory # 任务名称
+  become: yes
+  file: path={{data}} state=directory mode=0755 owner=hadoop group=hadoop 
+
+- name: Create App Base Directory
+  file: path={{app_base}} state=directory mode=0755 owner=hadoop group=hadoop
+ 
+- name: Create App Data Directory
+  file: path={{data_base}} state=directory mode=0755 owner=hadoop group=hadoop
+ 
+- name: Create App Log Directory
+  file: path={{log_base}} state=directory mode=0755 owner=hadoop group=hadoop
+
+- name: Create DownLoad Directory
+  file: path={{download_base}} state=directory mode=0755 owner=hadoop group=hadoop
+
+- name : Create Java Directory
+  file: path={{JAVA_BASE}} state=directory mode=0755 owner=hadoop group=hadoop
+
+
+ # copy jdk to target
+- name: Copy jdk-8u221-linux-x64.tar.gz to JAVA_BASE
+  become: yes
+  copy: src={{JAVA_VERSION}} dest={{JAVA_BASE}} mode=0755 force=no
+
+ # 在/usr/local目录下解压jdk
+- name: Extract Archive
+  become: yes
+  unarchive: dest={{JAVA_BASE}} src={{JAVA_BASE}}/{{JAVA_VERSION}} remote_src=yes owner=root group=root
+
+ # 更新环境变量
+- name: Copy environment.sh to /etc/profile.d
+  copy: src=environment.sh dest="/etc/profile.d/environment.sh" mode=0755 force=no
+
+ # 添加"export JAVA_HOME" 到/etc/profile.d/environment.sh文件中
+- name: Add Java Home to path
+  lineinfile: dest=/etc/profile.d/environment.sh line="export JAVA_HOME={{JAVA_HOME}}"
+
+ # 添加“export JRE_HOME” 到/etc/profile.d/environment.sh文件中
+- name: Add Jre Home to Path
+  lineinfile: dest=/etc/profile.d/environment.sh line="export JRE_HOME=$JAVA_HOME/jre"
+
+- name: Add Java Jre Lib to path
+  lineinfile: dest=/etc/profile.d/environment.sh line="export CLASSPATH=.:$JAVA_HOME/lib/tools.jar:$JRE_HOME/lib"
+
+- name: Add Java Jre Bin to path
+  lineinfile: dest=/etc/profile.d/environment.sh line="export PATH=$JAVA_HOME/bin:$JRE_HOME/bin:$PATH"
+
+- name: Source Env
+  shell: . /etc/profile.d/environment.sh
